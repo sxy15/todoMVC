@@ -1,0 +1,45 @@
+services:
+  my-mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./.mongodb:/data/db #数据持久化，避免重启容器后数据丢失
+
+  my-backend:
+    image: my-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.development
+      no_cache: true
+    restart: always
+    volumes:
+      - ./backend:/backend #为了在 dev 模式下实现热更新，这里把本地目录映射到容器目录
+    depends_on:
+      - my-mongo #依赖数据库
+
+  my-frontend:
+     image: my-frontend
+     build:
+       context: ./frontend
+       dockerfile: Dockerfile.development
+       no_cache: true
+
+     # 这里把 frontend 目录做了个映射，以及暴露 3000 端口，都是为了在 vite 开发时实现代码热更新。
+     volumes:
+       - ./frontend:/frontend
+     ports:
+       - "3000:3000"
+
+  # my-nginx:
+  #    image: my-nginx
+  #    build:
+  #      context: ./nginx
+  #      dockerfile: Dockerfile
+  #      no_cache: true
+  #    depends_on:
+  #      - my-mongo
+  #      - my-backend
+  #      - my-frontend
+  #    ports:
+  #      - "80:80"
